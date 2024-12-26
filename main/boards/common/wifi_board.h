@@ -1,0 +1,15 @@
+#ifndef _WIFI_BOARD_H_
+#define _WIFI_BOARD_H_
+
+#include "board.h"
+
+class WifiBoard : public Board
+{
+protected:
+    bool wifi_config_mode_ = false;
+    std::string GetBoardJson() override;
+public:
+    
+};
+
+#endif // _WIFI_BOARD_H_

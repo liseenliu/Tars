@@ -1,0 +1,15 @@
+menu "Tars Configuration"
+
+choice  BOARD_TYPE
+    prompt "Select the board type"
+    default BOARD_TYPE_ESP32S3
+    help
+        Select the board type you are using.
+    config BOARD_TYPE_ESP32S3
+        bool "ESP32S3"
+    config BOARD_TYPE_LICHUANG_DEV
+        bool "LICHUANG_DEV"
+
+endchoice
+    
+endmenu
