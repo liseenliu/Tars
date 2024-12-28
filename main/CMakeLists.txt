@@ -1,8 +1,16 @@
 set(SOURCES "display/display.cc"
+            "display/no_display.cc"
+            "display/ssd1306_display.cc"
             "application.cc"
             "system_info.cc"
             "main.cc")
+            
 set(INCLUDE_DIRS "." "display")
+
+# 字体
+file(GLOB FONT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fonts/*.c)
+list(APPEND SOURCES ${FONT_SOURCES})
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fonts)
 
 # 添加板级公共文件
 file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)

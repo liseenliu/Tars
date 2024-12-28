@@ -3,6 +3,7 @@
 
 #include <string>
 #include "led.h"
+#include "display/display.h"
 
 void *create_board();
 class Board
@@ -25,6 +26,7 @@ public:
     }
     virtual ~Board() = default;
     virtual Led* GetBuiltinLed() = 0;
+    virtual Display* GetDisplay() = 0;
     virtual std::string GetJson();
 };
 

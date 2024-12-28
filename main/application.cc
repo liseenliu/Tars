@@ -19,6 +19,8 @@ void Application::Start()
     auto builtin_led = board.GetBuiltinLed();
     builtin_led->SetBlue();
     builtin_led->StartContinuousBlink(1000);
+    
+    auto display = board.GetDisplay();
 }
 
 void Application::Schedule(std::function<void()> callback)
