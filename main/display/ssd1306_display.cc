@@ -76,7 +76,7 @@ SSD1306Display::SSD1306Display(void *i2c_master_handle, int width, int height, b
         .trans_size = 0,
         .hres = static_cast<uint32_t>(width_),
         .vres = static_cast<uint32_t>(height_),
-        .monochrome  = false,
+        .monochrome  = true,
         .rotation = {
             .swap_xy = false,
             .mirror_x = mirror_x_,

@@ -4,6 +4,8 @@
 #include <string>
 #include <esp_timer.h>
 #include <lvgl.h>
+#include <vector>
+#include <algorithm>
 
 class Display
 {

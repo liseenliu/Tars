@@ -17,10 +17,15 @@ void Application::Start()
 {
     auto &board = Board::GetInstance();
     auto builtin_led = board.GetBuiltinLed();
-    builtin_led->SetBlue();
+    builtin_led->SetGreen();
     builtin_led->StartContinuousBlink(1000);
     
     auto display = board.GetDisplay();
+
+    //
+    display->SetStatus("你好大方脸");
+
+    display->SetEmotion("kissy");
 }
 
 void Application::Schedule(std::function<void()> callback)
