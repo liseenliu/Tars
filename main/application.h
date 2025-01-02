@@ -9,9 +9,31 @@
 #include <mutex>
 #include <list>
 
+#include <opus_encoder.h>
+#include <opus_decoder.h>
+#include <opus_resampler.h>
+#include "background_task.h"
+
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "wake_word_detect.h"
+#include "audio_processor.h"
+#endif
+
 #define SCHEDULE_EVENT (1 << 0)
 #define AUDIO_INPUT_READY_EVENT (1 << 1)
 #define AUDIO_OUTPUT_READY_EVENT (1 << 2)
+
+#define OPUS_FRAME_DURATION_MS 60
+
+enum ChatState
+{
+    kChatStateUnknown,
+    kChatStateIdle,
+    kChatStateConnecting,
+    kChatStateListening,
+    kChatStateSpeaking,
+    kChatStateUpgrading
+};
 
 class Application
 {
@@ -26,17 +48,41 @@ public:
     Application &operator=(const Application &) = delete;
     void Start();
     void Schedule(std::function<void()> callback);
+    ChatState GetChatState() const { return chat_state_; }
+    void SetChatState(ChatState state);
 
 private:
+#if CONFIG_IDF_TARGET_ESP32S3
+    WakeWordDetect wake_word_detect_;
+    AudioProcessor audio_processor_;
+#endif
+
     std::mutex mutex_;
     std::list<std::function<void()>> main_tasks_;
-
     EventGroupHandle_t event_group_;
+    volatile ChatState chat_state_ = kChatStateUnknown;
+    bool keep_listening_ = false;
+    bool aborted_ = false;
+    std::string last_iot_states_;
+
+    // Audio encode / decode
+    BackgroundTask background_task_;
+    std::chrono::steady_clock::time_point last_output_time_;
+    std::list<std::vector<uint8_t>> audio_decode_queue_;
+
+    std::unique_ptr<OpusEncoderWrapper> opus_encoder_;
+    std::unique_ptr<OpusDecoderWrapper> opus_decoder_;
+
+    int opus_decode_sample_rate_ = -1;
+    OpusResampler input_resampler_;
+    OpusResampler reference_resampler_;
+    OpusResampler output_resampler_;
+
     Application();
     ~Application();
     void MainLoop();
     void InputAudio();
-    void OutputAudio(); 
+    void OutputAudio();
     void ResetDecoder();
     void SetDecodeSampleRate(int sample_rate);
     void CheckNewVersion();

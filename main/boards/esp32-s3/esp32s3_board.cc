@@ -2,6 +2,7 @@
 #include "led.h"
 #include "config.h"
 #include "display/ssd1306_display.h"
+#include "audio_codecs/no_audio_codec.h"
 
 #include <esp_log.h>
 #include <driver/i2c_master.h>
@@ -27,24 +28,32 @@ private:
         };
         ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &display_i2c_bus_));
     }
+
 public:
-    
-    ESP32S3Board() 
+    ESP32S3Board()
     {
         InitializeDisplayI2c();
     }
-    
 
-    virtual Led* GetBuiltinLed() override
+    virtual Led *GetBuiltinLed() override
     {
         static Led led(BUILTIN_LED_GPIO);
         return &led;
     }
 
-    virtual Display* GetDisplay() override
+    virtual Display *GetDisplay() override
     {
         static SSD1306Display display(display_i2c_bus_, DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
         return &display;
+    }
+
+    virtual AudioCodec *GetAudioCodec() override
+    {
+#ifdef AUDIO_I2S_METHOD_SIMPLEX
+        static NoAudioCodec audio_codec(AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,
+                                        AUDIO_I2S_SPK_GPIO_BCLK, AUDIO_I2S_SPK_GPIO_LRCK, AUDIO_I2S_SPK_GPIO_DOUT, AUDIO_I2S_MIC_GPIO_SCK, AUDIO_I2S_MIC_GPIO_WS, AUDIO_I2S_MIC_GPIO_DIN);
+#endif
+        return &audio_codec;
     }
 };
 

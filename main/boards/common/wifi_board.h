@@ -2,7 +2,6 @@
 #define _WIFI_BOARD_H_
 
 #include "board.h"
-
 class WifiBoard : public Board
 {
 protected:

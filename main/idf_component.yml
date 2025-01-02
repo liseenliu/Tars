@@ -17,3 +17,5 @@ dependencies:
   espressif/led_strip: ^3.0.0
   lvgl/lvgl: ^9.2.2
   espressif/esp_lvgl_port: ^2.4.3
+  78/esp-opus-encoder: ^2.0.0
+  espressif/esp-sr: ^1.9.5

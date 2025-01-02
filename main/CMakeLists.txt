@@ -1,11 +1,18 @@
-set(SOURCES "display/display.cc"
+set(SOURCES "audio_codecs/audio_codec.cc"
+            "audio_codecs/no_audio_codec.cc"
+            "audio_processing/audio_processor.cc"
+            "audio_processing/wake_word_detect.cc"
+            "wifi_connect/wifi_configuration_ap.cc"
+            "display/display.cc"
             "display/no_display.cc"
             "display/ssd1306_display.cc"
+            "settings.cc"
             "application.cc"
             "system_info.cc"
+            "background_task.cc"
             "main.cc")
             
-set(INCLUDE_DIRS "." "display")
+set(INCLUDE_DIRS "." "display" "audio_codecs" "audio_processing")
 
 # 字体
 file(GLOB FONT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fonts/*.c)
@@ -25,6 +32,13 @@ endif()
 file(GLOB BOARD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}/*.cc)
 list(APPEND SOURCES ${BOARD_SOURCES})
 
+# 在虾哥的工程里 代码是通用级别的，但是暂时先这么抄了。其实这里只需要写在Sources里面就可以了
+# if(CONFIG_IDF_TARGET_ESP32S3)
+#     list(APPEND SOURCES "audio_processing/audio_processor.cc" "audio_processing/wake_word_detect.cc")
+# endif()
+
 idf_component_register(SRCS ${SOURCES}
+                    EMBED_FILES "assets/wifi_configuration_ap.html"
                     INCLUDE_DIRS ${INCLUDE_DIRS}
+                    WHOLE_ARCHIVE
                     )
