@@ -12,6 +12,8 @@
 #include <opus_encoder.h>
 #include <opus_decoder.h>
 #include <opus_resampler.h>
+
+#include "protocols/protocol.h"
 #include "background_task.h"
 
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -50,6 +52,7 @@ public:
     void Schedule(std::function<void()> callback);
     ChatState GetChatState() const { return chat_state_; }
     void SetChatState(ChatState state);
+    void Alert(const std::string& title, const std::string& message);
 
 private:
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -86,6 +89,8 @@ private:
     void ResetDecoder();
     void SetDecodeSampleRate(int sample_rate);
     void CheckNewVersion();
+
+    void PlayLocalFile(const char* data, size_t size);
 };
 
 #endif // _APPLICATION_H_

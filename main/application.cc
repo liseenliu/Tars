@@ -4,7 +4,20 @@
 #include "display/display.h"
 #include "audio_codecs/audio_codec.h"
 
+#include <cstring>
+#include <esp_log.h>
+#include <cJSON.h>
+#include <driver/gpio.h>
+#include <arpa/inet.h>
+
 #define TAG "Application"
+
+extern const char p3_err_reg_start[] asm("_binary_err_reg_p3_start");
+extern const char p3_err_reg_end[] asm("_binary_err_reg_p3_end");
+extern const char p3_err_pin_start[] asm("_binary_err_pin_p3_start");
+extern const char p3_err_pin_end[] asm("_binary_err_pin_p3_end");
+extern const char p3_err_wificonfig_start[] asm("_binary_err_wificonfig_p3_start");
+extern const char p3_err_wificonfig_end[] asm("_binary_err_wificonfig_p3_end");
 
 static const char* const STATE_STRINGS[] = {
     "unknown",
@@ -67,6 +80,9 @@ void Application::Start()
         Application* app = (Application*)arg;
         app->MainLoop();
         vTaskDelete(NULL); }, "main_loop", 4096 * 2, this, 2, nullptr);
+    
+    /* Wait for the network to be ready */
+    board.StartNetwork();
 
     // Check for new firmware version or get the MQTT broker address
     xTaskCreate([](void *arg)
@@ -178,7 +194,7 @@ void Application::SetChatState(ChatState state)
         builtin_led->TurnOn();
         display->SetStatus("聆听中");
 #if CONFIG_IDF_TARGET_ESP32S3
-            audio_processor_.Start();
+        audio_processor_.Start();
 #endif
         break;
     case kChatStateSpeaking:
@@ -186,7 +202,7 @@ void Application::SetChatState(ChatState state)
         builtin_led->TurnOn();
         display->SetStatus("说话中");
 #if CONFIG_IDF_TARGET_ESP32S3
-            audio_processor_.Stop();
+        audio_processor_.Stop();
 #endif
         break;
     case kChatStateConnecting:
@@ -204,6 +220,21 @@ void Application::SetChatState(ChatState state)
         break;
     }
 }
+
+void Application::Alert(const std::string& title, const std::string& message) {
+    ESP_LOGW(TAG, "Alert: %s, %s", title.c_str(), message.c_str());
+    auto display = Board::GetInstance().GetDisplay();
+    display->ShowNotification(message);
+
+    if (message == "PIN is not ready") {
+        PlayLocalFile(p3_err_pin_start, p3_err_pin_end - p3_err_pin_start);
+    } else if (message == "Configuring WiFi") {
+        PlayLocalFile(p3_err_wificonfig_start, p3_err_wificonfig_end - p3_err_wificonfig_start);
+    } else if (message == "Registration denied") {
+        PlayLocalFile(p3_err_reg_start, p3_err_reg_end - p3_err_reg_start);
+    }
+}
+
 
 void Application::MainLoop()
 {
@@ -284,7 +315,53 @@ void Application::InputAudio()
 
 void Application::OutputAudio()
 {
-    
+    auto now = std::chrono::steady_clock::now();
+    auto codec = Board::GetInstance().GetAudioCodec();
+    const int max_silence_seconds = 10;
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (audio_decode_queue_.empty()) {
+        // Disable the output if there is no audio data for a long time
+        if (chat_state_ == kChatStateIdle) {
+            auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - last_output_time_).count();
+            if (duration > max_silence_seconds) {
+                codec->EnableOutput(false);
+            }
+        }
+        return;
+    }
+
+    if (chat_state_ == kChatStateListening) {
+        audio_decode_queue_.clear();
+        return;
+    }
+
+    last_output_time_ = now;
+    auto opus = std::move(audio_decode_queue_.front());
+    audio_decode_queue_.pop_front();
+    lock.unlock();
+
+    background_task_.Schedule([this, codec, opus = std::move(opus)]() mutable {
+        if (aborted_) {
+            return;
+        }
+
+        std::vector<int16_t> pcm;
+        if (!opus_decoder_->Decode(std::move(opus), pcm)) {
+            return;
+        }
+
+        // Resample if the sample rate is different
+        if (opus_decode_sample_rate_ != codec->output_sample_rate()) {
+            int target_size = output_resampler_.GetOutputSamples(pcm.size());
+            std::vector<int16_t> resampled(target_size);
+            output_resampler_.Process(pcm.data(), pcm.size(), resampled.data());
+            pcm = std::move(resampled);
+        }
+        
+        codec->OutputData(pcm);
+    });
+
 }
 
 void Application::ResetDecoder()
@@ -293,8 +370,39 @@ void Application::ResetDecoder()
 
 void Application::SetDecodeSampleRate(int sample_rate)
 {
+    if (opus_decode_sample_rate_ == sample_rate) {
+        return;
+    }
+
+    opus_decode_sample_rate_ = sample_rate;
+    opus_decoder_ = std::make_unique<OpusDecoderWrapper>(opus_decode_sample_rate_, 1);
+
+    auto codec = Board::GetInstance().GetAudioCodec();
+    if (opus_decode_sample_rate_ != codec->output_sample_rate()) {
+        ESP_LOGI(TAG, "Resampling audio from %d to %d", opus_decode_sample_rate_, codec->output_sample_rate());
+        output_resampler_.Configure(opus_decode_sample_rate_, codec->output_sample_rate());
+    }
 }
 
 void Application::CheckNewVersion()
 {
+}
+
+void Application::PlayLocalFile(const char* data, size_t size)
+{
+    ESP_LOGI(TAG, "PlayLocalFile: %zu bytes", size);
+    SetDecodeSampleRate(16000);
+    for (const char* p = data; p < data + size; ) {
+        auto p3 = (BinaryProtocol3*)p;
+        p += sizeof(BinaryProtocol3);
+
+        auto payload_size = ntohs(p3->payload_size);
+        std::vector<uint8_t> opus;
+        opus.resize(payload_size);
+        memcpy(opus.data(), p3->payload, payload_size);
+        p += payload_size;
+
+        std::lock_guard<std::mutex> lock(mutex_);
+        audio_decode_queue_.emplace_back(std::move(opus));
+    }
 }

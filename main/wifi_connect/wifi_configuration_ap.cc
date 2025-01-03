@@ -20,7 +20,8 @@
 
 extern const char index_html_start[] asm("_binary_wifi_configuration_ap_html_start");
 
-WifiConfigurationAp& WifiConfigurationAp::GetInstance() {
+WifiConfigurationAp& WifiConfigurationAp::GetInstance() 
+{
     static WifiConfigurationAp instance;
     return instance;
 }
@@ -79,7 +80,6 @@ std::string WifiConfigurationAp::GetSsid()
 
 std::string WifiConfigurationAp::GetWebServerUrl()
 {
-    // http://192.168.4.1
     return "http://192.168.4.1";
 }
 
@@ -260,6 +260,7 @@ bool WifiConfigurationAp::ConnectToWifi(const std::string &ssid, const std::stri
     strcpy((char *)wifi_config.sta.ssid, ssid.c_str());
     strcpy((char *)wifi_config.sta.password, password.c_str());
     wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_config.sta.failure_retry_cnt = 1;
     
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));

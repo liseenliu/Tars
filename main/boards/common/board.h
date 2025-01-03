@@ -30,6 +30,7 @@ public:
     virtual Led* GetBuiltinLed() = 0;
     virtual Display* GetDisplay() = 0;
     virtual AudioCodec* GetAudioCodec() = 0;
+    virtual void StartNetwork() = 0;
     virtual std::string GetJson();
 };
 

@@ -3,9 +3,13 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "audio_processing/audio_processor.cc"
             "audio_processing/wake_word_detect.cc"
             "wifi_connect/wifi_configuration_ap.cc"
+            "wifi_connect/wifi_station.cc"
             "display/display.cc"
             "display/no_display.cc"
             "display/ssd1306_display.cc"
+            "protocols/protocol.cc"
+            "web_socket/web_socket.cc"
+            "web_socket/tls_transport.cc"
             "settings.cc"
             "application.cc"
             "system_info.cc"
@@ -38,7 +42,12 @@ list(APPEND SOURCES ${BOARD_SOURCES})
 # endif()
 
 idf_component_register(SRCS ${SOURCES}
-                    EMBED_FILES "assets/wifi_configuration_ap.html"
+                    EMBED_FILES "assets/wifi_configuration_ap.html" "assets/favicon.ico" "assets/err_reg.p3" "assets/err_pin.p3" "assets/err_wificonfig.p3"
                     INCLUDE_DIRS ${INCLUDE_DIRS}
                     WHOLE_ARCHIVE
+                    )
+
+# 使用 target_compile_definitions 来定义 BOARD_TYPE
+target_compile_definitions(${COMPONENT_LIB}
+                    PRIVATE BOARD_TYPE=\"${BOARD_TYPE}\"
                     )

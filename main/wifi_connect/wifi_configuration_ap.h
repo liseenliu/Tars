@@ -8,7 +8,7 @@
 
 class WifiConfigurationAp
 {
-private:
+public:
     static WifiConfigurationAp& GetInstance();
     void SetSsidPrefix(const std::string &&ssid_prefix);
     void Start();
@@ -19,7 +19,7 @@ private:
     // Delete copy constructor and assignment operator
     WifiConfigurationAp(const WifiConfigurationAp&) = delete;
     WifiConfigurationAp& operator=(const WifiConfigurationAp&) = delete;
-public:
+private:
     WifiConfigurationAp();
     ~WifiConfigurationAp();
 

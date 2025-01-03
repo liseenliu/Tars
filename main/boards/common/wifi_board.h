@@ -8,7 +8,7 @@ protected:
     bool wifi_config_mode_ = false;
     std::string GetBoardJson() override;
 public:
-    
+    virtual void StartNetwork() override;
 };
 
 #endif // _WIFI_BOARD_H_
