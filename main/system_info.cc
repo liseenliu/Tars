@@ -22,7 +22,7 @@ size_t SystemInfo::GetFlashSize()
     return (size_t)flash_size;
 }
 
-size_t SystemInfo::GetMinimumHeapSize()
+size_t SystemInfo::GetMinimumFreeHeapSize()
 {
     return esp_get_minimum_free_heap_size();
 }

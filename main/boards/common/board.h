@@ -3,7 +3,8 @@
 
 #include <string>
 #include "led.h"
-
+#include "web_socket/web_socket.h"
+#include "http/http.h"
 
 void *create_board();
 class Display;
@@ -30,8 +31,13 @@ public:
     virtual Led* GetBuiltinLed() = 0;
     virtual Display* GetDisplay() = 0;
     virtual AudioCodec* GetAudioCodec() = 0;
+    virtual Http* CreateHttp() = 0;
     virtual void StartNetwork() = 0;
+    virtual WebSocket* CreateWebSocket() = 0;
+    virtual bool GetNetworkState(std::string& network_name, int& signal_quality, std::string& signal_quality_text) = 0;
+    virtual const char* GetNetworkStateIcon() = 0;
     virtual std::string GetJson();
+    virtual void SetPowerSaveMode(bool enabled) = 0;
 };
 
 #define DECLARE_BOARD(BOARD_CLASS_NAME) \

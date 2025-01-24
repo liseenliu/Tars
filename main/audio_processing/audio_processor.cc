@@ -67,7 +67,7 @@ void AudioProcessor::Initialize(int channels, bool reference)
 
 void AudioProcessor::Input(const std::vector<int16_t>& data) {
     input_buffer_.insert(input_buffer_.end(), data.begin(), data.end());
-
+    //获取到麦克风的声音buffer后传递给esp 的升学前端算法框架
     auto chunk_size = esp_afe_vc_v1.get_feed_chunksize(afe_communication_data_) * channels_;
     while (input_buffer_.size() >= chunk_size) {
         auto chunk = input_buffer_.data();

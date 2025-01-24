@@ -10,13 +10,22 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "protocols/protocol.cc"
             "web_socket/web_socket.cc"
             "web_socket/tls_transport.cc"
+            "http/esp_http.cc"
+            "protocols/websocket_protocol.cc"
+            "iot/thing.cc"
+            "iot/thing_manager.cc"
             "settings.cc"
+            "ota.cc"
             "application.cc"
             "system_info.cc"
             "background_task.cc"
             "main.cc")
             
 set(INCLUDE_DIRS "." "display" "audio_codecs" "audio_processing")
+
+# 添加 IOT 相关文件
+file(GLOB IOT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/iot/things/*.cc)
+list(APPEND SOURCES ${IOT_SOURCES})
 
 # 字体
 file(GLOB FONT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fonts/*.c)
@@ -51,3 +60,4 @@ idf_component_register(SRCS ${SOURCES}
 target_compile_definitions(${COMPONENT_LIB}
                     PRIVATE BOARD_TYPE=\"${BOARD_TYPE}\"
                     )
+target_compile_options(${COMPONENT_LIB} PRIVATE -fexceptions)

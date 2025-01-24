@@ -4,8 +4,25 @@
 #include "system_info.h"
 #include "wifi_connect/wifi_station.h"
 #include "wifi_connect/wifi_configuration_ap.h"
-
+#include "web_socket/tls_transport.h"
+#include "http/esp_http.h"
+#include "font_awesome_symbols.h"
+#include "settings.h"
 #define TAG "WifiBoard"
+
+static std::string rssi_to_string(int rssi) {
+    if (rssi >= -55) {
+        return "Very good";
+    } else if (rssi >= -65) {
+        return "Good";
+    } else if (rssi >= -75) {
+        return "Fair";
+    } else if (rssi >= -85) {
+        return "Poor";
+    } else {
+        return "No network";
+    }
+}
 
 void WifiBoard::StartNetwork()
 {
@@ -45,6 +62,58 @@ void WifiBoard::StartNetwork()
     }
 }
 
+WebSocket* WifiBoard::CreateWebSocket()
+{
+    return new WebSocket(new TlsTransport());
+}
+
+Http* WifiBoard::CreateHttp() {
+    return new EspHttp();
+}
+
+
+bool WifiBoard::GetNetworkState(std::string& network_name, int& signal_quality, std::string& signal_quality_text) {
+    if (wifi_config_mode_) {
+        auto& wifi_ap = WifiConfigurationAp::GetInstance();
+        network_name = wifi_ap.GetSsid();
+        signal_quality = -99;
+        signal_quality_text = wifi_ap.GetWebServerUrl();
+        return true;
+    }
+    auto& wifi_station = WifiStation::GetInstance();
+    if (!wifi_station.IsConnected()) {
+        return false;
+    }
+    network_name = wifi_station.GetSsid();
+    signal_quality = wifi_station.GetRssi();
+    signal_quality_text = rssi_to_string(signal_quality);
+    return signal_quality != -1;
+}
+
+const char* WifiBoard::GetNetworkStateIcon() {
+    if (wifi_config_mode_) {
+        return FONT_AWESOME_WIFI;
+    }
+    auto& wifi_station = WifiStation::GetInstance();
+    if (!wifi_station.IsConnected()) {
+        return FONT_AWESOME_WIFI_OFF;
+    }
+    int8_t rssi = wifi_station.GetRssi();
+    if (rssi >= -55) {
+        return FONT_AWESOME_WIFI;
+    } else if (rssi >= -65) {
+        return FONT_AWESOME_WIFI_FAIR;
+    } else {
+        return FONT_AWESOME_WIFI_WEAK;
+    }
+}
+
+void WifiBoard::SetPowerSaveMode(bool enabled) {
+    auto& wifi_station = WifiStation::GetInstance();
+    wifi_station.SetPowerSaveMode(enabled);
+}
+
+
 /**
  * 获取wifit板子的json信息
  */
@@ -62,4 +131,16 @@ std::string WifiBoard::GetBoardJson()
     }
     board_json += "\"mac\":\"" + SystemInfo::GetMacAddress() + "\"}";
     return board_json;
+}
+
+
+void WifiBoard::ResetWifiConfiguration() {
+    {
+        Settings settings("wifi", true);
+        settings.EraseAll();
+    }
+    GetDisplay()->ShowNotification("已重置 WiFi...");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // Reboot the device
+    esp_restart();
 }

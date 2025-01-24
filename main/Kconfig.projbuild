@@ -1,5 +1,23 @@
 menu "Tars Configuration"
 
+config OTA_VERSION_URL
+    string "OTA Version URL"
+    default "https://api.tenclass.net/xiaozhi/ota/"
+    help
+        The application will access this URL to check for updates.
+
+config WEBSOCKET_URL
+    string "Websocket URL"
+    default "wss://api.tenclass.net/xiaozhi/v1/"
+    help
+        Communication with the server through websocket after wake up.
+
+config WEBSOCKET_ACCESS_TOKEN
+    string "Websocket Access Token"
+    default "test-token"
+    help
+        Access token for websocket communication.
+
 choice  BOARD_TYPE
     prompt "Select the board type"
     default BOARD_TYPE_ESP32S3

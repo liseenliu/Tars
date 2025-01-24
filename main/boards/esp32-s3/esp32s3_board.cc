@@ -3,7 +3,7 @@
 #include "config.h"
 #include "display/ssd1306_display.h"
 #include "audio_codecs/no_audio_codec.h"
-
+#include "iot/thing_manager.h"
 #include <esp_log.h>
 #include <driver/i2c_master.h>
 #define TAG "ESP32S3Board"
@@ -29,10 +29,18 @@ private:
         ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &display_i2c_bus_));
     }
 
+    // 物联网初始化，添加对 AI 可见设备
+    void InitializeIot() {
+        auto& thing_manager = iot::ThingManager::GetInstance();
+        thing_manager.AddThing(iot::CreateThing("Speaker"));
+        thing_manager.AddThing(iot::CreateThing("Lamp"));
+    }
+
 public:
     ESP32S3Board()
     {
         InitializeDisplayI2c();
+        InitializeIot();
     }
 
     virtual Led *GetBuiltinLed() override

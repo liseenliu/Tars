@@ -4,17 +4,17 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
-
 #include <string>
 #include <mutex>
 #include <list>
-
 #include <opus_encoder.h>
 #include <opus_decoder.h>
 #include <opus_resampler.h>
 
 #include "protocols/protocol.h"
+#include "protocols/websocket_protocol.h"
 #include "background_task.h"
+#include "ota.h"
 
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "wake_word_detect.h"
@@ -53,15 +53,18 @@ public:
     ChatState GetChatState() const { return chat_state_; }
     void SetChatState(ChatState state);
     void Alert(const std::string& title, const std::string& message);
+    void AbortSpeaking(AbortReason reason);
+    void UpdateIotStates();
 
 private:
 #if CONFIG_IDF_TARGET_ESP32S3
     WakeWordDetect wake_word_detect_;
     AudioProcessor audio_processor_;
 #endif
-
+    Ota ota_;
     std::mutex mutex_;
     std::list<std::function<void()>> main_tasks_;
+    std::unique_ptr<Protocol> protocol_;
     EventGroupHandle_t event_group_;
     volatile ChatState chat_state_ = kChatStateUnknown;
     bool keep_listening_ = false;

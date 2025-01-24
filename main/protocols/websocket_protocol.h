@@ -2,7 +2,7 @@
 #define _WEBSOCKET_PROTOCOL_H_
 
 #include "protocol.h"
-
+#include "web_socket/web_socket.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 
@@ -23,6 +23,7 @@ public:
 
 private:
     EventGroupHandle_t event_group_handle_;
+    WebSocket* websocket_ = nullptr;
     void ParseServerHello(const cJSON* root);
     void SendText(const std::string& text) override;
 };
